@@ -16,7 +16,7 @@ test_requires	'Test::Roo'					=> 0;
 
 perl_version	'5.014';
 
-requires		'Attean'					=> 0;
+requires		'Attean'					=> 0.012;
 requires		'List::MoreUtils'			=> 0;
 requires		'Math::Cartesian::Product'	=> 1.008;
 requires		'Moo'						=> 1.006000;

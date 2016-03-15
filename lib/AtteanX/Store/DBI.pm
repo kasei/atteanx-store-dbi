@@ -33,7 +33,7 @@ package AtteanX::Store::DBI {
 	our $VERSION	= '0.001';
 	use Moo;
 	use DBI;
-	use Attean;
+	use Attean 0.012;
 	use DBI::Const::GetInfoType;
 	use Type::Tiny::Role;
 	use Types::Standard qw(Int Str ArrayRef HashRef ConsumerOf InstanceOf);
