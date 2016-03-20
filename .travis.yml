@@ -24,5 +24,9 @@ install:
   - "cpanm --quiet --notest namespace::clean"
   - "cpanm --quiet --notest Type::Tiny"
   - "cpanm --quiet --notest DBIx::MultiStatementDo"
+  - "cpanm --quiet --notest XML::Simple"
+  - "cpanm --quiet --notest Regexp::Common"
+  - "cpanm --quiet --notest Test::Exception"
+  - "cpanm --quiet --notest Test::LWP::UserAgent"
 script:
   - "perl Makefile.PL && make test"
