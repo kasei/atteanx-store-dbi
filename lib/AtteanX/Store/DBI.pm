@@ -33,7 +33,7 @@ package AtteanX::Store::DBI {
 	our $VERSION	= '0.001';
 	use Moo;
 	use DBI;
-	use Attean 0.012;
+	use Attean 0.013;
 	use DBI::Const::GetInfoType;
 	use Type::Tiny::Role;
 	use Types::Standard qw(Int Str ArrayRef HashRef ConsumerOf InstanceOf);
@@ -562,7 +562,27 @@ returns undef.
 		my %args			= @_;
 		return unless ($algebra);
 		
-		if ($algebra->isa('Attean::Algebra::BGP') and scalar(@{ $algebra->triples }) > 0) {
+		if ($algebra->isa('Attean::Algebra::Filter')) {
+			my $e	= $algebra->expression;
+			if ($e->isa('Attean::FunctionExpression') and $e->operator eq 'ISLITERAL') {
+				my ($operand)	= @{ $e->children };
+				if ($operand->isa('Attean::ValueExpression') and $operand->value->does('Attean::API::Variable')) {
+					my $var	= $operand->value;
+					if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs)) {
+						if ($plan->isa('AtteanX::Store::DBI::Plan')) {
+							if (exists $plan->variables->{ $var->value }) {
+								my ($table, $col)	= @{ $plan->variables->{ $var->value } };
+								my $ref	= join('.', map { $self->dbh->quote_identifier($_) } ($table, $col));
+								my $type	= $self->dbh->quote_identifier('type');
+								push(@{ $plan->where }, "$ref IN (SELECT term_id FROM term WHERE $type = ?)");
+								push(@{ $plan->bindings }, "literal");
+								return $plan;
+							}
+						}
+					}
+				}
+			}
+		} elsif ($algebra->isa('Attean::Algebra::BGP') and scalar(@{ $algebra->triples }) > 0) {
 			my @vars	= $algebra->in_scope_variables;
 			
 			my @triples	= @{ $algebra->triples };
