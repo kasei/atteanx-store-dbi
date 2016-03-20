@@ -19,6 +19,7 @@ use DBIx::MultiStatementDo;
 use Types::Standard qw(Str ArrayRef);
 use Class::Method::Modifiers;
 
+use AtteanX::Store::DBI;
 with 'Test::Attean::SPARQLSuite';
 
 has 'test_files'	=> (is => 'rw', isa => ArrayRef, default => sub { [] });
