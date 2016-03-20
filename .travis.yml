@@ -7,6 +7,7 @@ install:
   - "cpanm --quiet --notest Module::Install::AuthorTests"
   - "cpanm --quiet --notest Module::Install::DOAPChangeSets"
   - "cpanm --quiet --notest Attean"
+  - "cpanm --quiet --notest HTTP::Message::PSGI"
   - "cpanm --quiet --notest Test::Modern"
   - "cpanm --quiet --notest Test::Moose"
   - "cpanm --quiet --notest Test::Pod"
