@@ -14,6 +14,7 @@ use autodie;
 use Test::Roo;
 use List::MoreUtils qw(all);
 
+use AtteanX::Store::DBI;
 with 'Test::Attean::SPARQLSuite';
 
 my %args;
