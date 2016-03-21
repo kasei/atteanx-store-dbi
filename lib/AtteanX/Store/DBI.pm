@@ -564,19 +564,22 @@ returns undef.
 		
 		if ($algebra->isa('Attean::Algebra::Filter')) {
 			my $e	= $algebra->expression;
-			if ($e->isa('Attean::FunctionExpression') and $e->operator eq 'ISLITERAL') {
-				my ($operand)	= @{ $e->children };
-				if ($operand->isa('Attean::ValueExpression') and $operand->value->does('Attean::API::Variable')) {
-					my $var	= $operand->value;
-					if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs)) {
-						if ($plan->isa('AtteanX::Store::DBI::Plan')) {
-							if (exists $plan->variables->{ $var->value }) {
-								my ($table, $col)	= @{ $plan->variables->{ $var->value } };
-								my $ref	= join('.', map { $self->dbh->quote_identifier($_) } ($table, $col));
-								my $type	= $self->dbh->quote_identifier('type');
-								push(@{ $plan->where }, "$ref IN (SELECT term_id FROM term WHERE $type = ?)");
-								push(@{ $plan->bindings }, "literal");
-								return $plan;
+			if ($e->isa('Attean::FunctionExpression')) {
+				if ($e->operator =~ m/IS(IRI|LITERAL|BLANK)/i) {
+					my $type	= lc($1);
+					my ($operand)	= @{ $e->children };
+					if ($operand->isa('Attean::ValueExpression') and $operand->value->does('Attean::API::Variable')) {
+						my $var	= $operand->value;
+						if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs)) {
+							if ($plan->isa('AtteanX::Store::DBI::Plan')) {
+								if (exists $plan->variables->{ $var->value }) {
+									my ($table, $col)	= @{ $plan->variables->{ $var->value } };
+									my $ref	= join('.', map { $self->dbh->quote_identifier($_) } ($table, $col));
+									my $typecol	= $self->dbh->quote_identifier('type');
+									push(@{ $plan->where }, "$ref IN (SELECT term_id FROM term WHERE ${typecol} = ?)");
+									push(@{ $plan->bindings }, $type);
+									return $plan;
+								}
 							}
 						}
 					}
