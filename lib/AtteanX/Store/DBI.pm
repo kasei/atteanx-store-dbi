@@ -558,9 +558,10 @@ returns undef.
 		my $model			= shift;
 		my $active_graphs	= shift;
 		my $default_graphs	= shift;
+		return unless ($algebra);
 		
 		my %args			= @_;
-		return unless ($algebra);
+		my $counter			= $args{dbi_filter_counter}++;
 		
 		if ($algebra->isa('Attean::Algebra::Filter')) {
 			my $e	= $algebra->expression;
@@ -570,7 +571,7 @@ returns undef.
 					my ($operand)	= @{ $e->children };
 					if ($operand->isa('Attean::ValueExpression') and $operand->value->does('Attean::API::Variable')) {
 						my $var	= $operand->value;
-						if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs)) {
+						if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs, %args)) {
 							if ($plan->isa('AtteanX::Store::DBI::Plan')) {
 								if (exists $plan->variables->{ $var->value }) {
 									my ($table, $col)	= @{ $plan->variables->{ $var->value } };
@@ -579,6 +580,45 @@ returns undef.
 									push(@{ $plan->where }, "$ref IN (SELECT term_id FROM term WHERE ${typecol} = ?)");
 									push(@{ $plan->bindings }, $type);
 									return $plan;
+								}
+							}
+						}
+					}
+				} elsif ($e->operator eq 'STRSTARTS') {
+					if ($self->database_type eq 'mysql') {
+						my ($varexpr, $pat)	= @{ $e->children };
+						if ($varexpr->isa('Attean::ValueExpression') and $varexpr->value->does('Attean::API::Variable') and $pat->isa('Attean::ValueExpression') and $pat->value->does('Attean::API::Literal')) {
+							if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs, %args)) {
+								if ($plan->isa('AtteanX::Store::DBI::Plan')) {
+									my $var	= $varexpr->value;
+									my $varname	= $var->value;
+									if (exists $plan->variables->{ $var->value }) {
+										my ($table, $col)	= @{ $plan->variables->{ $var->value } };
+										my $literal	= $pat->value;
+										my $ref	= join('.', map { $self->dbh->quote_identifier($_) } ($table, $col));
+										my $typecol		= $self->dbh->quote_identifier('type');
+										my $termtable	= "tf$counter";
+										push(@{ $plan->tables }, ['term', $termtable]);
+
+										push(@{ $plan->where }, "$ref = $termtable.term_id");
+										push(@{ $plan->where }, "$termtable.$typecol = ?");
+										push(@{ $plan->where }, "LOCATE(?, $termtable.value) = ?");
+
+										push(@{ $plan->bindings }, 'literal');
+										push(@{ $plan->bindings }, $literal->value);
+										push(@{ $plan->bindings }, 1);
+									
+										if (my $lang = $literal->language) {
+											push(@{ $plan->where }, "$termtable.language = ?");
+											push(@{ $plan->bindings }, $lang);
+										} else {
+											my $xs	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#string' );
+											my $id	= $self->_get_term_id($xs);
+											push(@{ $plan->where }, "$termtable.datatype = ?");
+											push(@{ $plan->bindings }, $id);
+										}
+										return $plan;
+									}
 								}
 							}
 						}
@@ -628,7 +668,7 @@ returns undef.
 			
 			foreach my $t (@triples) {
 				my $table	= 't' . $tcounter++;
-				push(@tables, $table);
+				push(@tables, ['quad', $table]);
 
 				my @vars;
 				my $q		= $t->as_quadpattern($graph);
@@ -718,7 +758,7 @@ package AtteanX::Store::DBI::Plan 0.012 {
 	has bindings		=> (is => 'ro', isa => ArrayRef, required => 1);
 	has select			=> (is => 'ro', isa => ArrayRef, required => 1);
 	has where			=> (is => 'ro', isa => ArrayRef, required => 1);
-	has tables			=> (is => 'ro', isa => ArrayRef[Str], required => 1);
+	has tables			=> (is => 'ro', isa => ArrayRef[ArrayRef[Str]], required => 1);
 	
 	with 'Attean::API::BindingSubstitutionPlan', 'Attean::API::NullaryQueryTree';
 	
@@ -759,7 +799,7 @@ package AtteanX::Store::DBI::Plan 0.012 {
 		push(@sql, join(', ', @select));
 
 		push(@sql, 'FROM');
-		push(@sql, join(', ', map { sprintf("quad %s", $_) } @{ $self->tables }));
+		push(@sql, join(', ', map { join(' ', @$_) } @{ $self->tables }));
 
 		if (scalar(@where)) {
 			push(@sql, 'WHERE');
