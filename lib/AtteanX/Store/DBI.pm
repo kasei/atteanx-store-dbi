@@ -585,40 +585,45 @@ returns undef.
 						}
 					}
 				} elsif ($e->operator eq 'STRSTARTS') {
-					if ($self->database_type eq 'mysql') {
-						my ($varexpr, $pat)	= @{ $e->children };
-						if ($varexpr->isa('Attean::ValueExpression') and $varexpr->value->does('Attean::API::Variable') and $pat->isa('Attean::ValueExpression') and $pat->value->does('Attean::API::Literal')) {
-							if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs, %args)) {
-								if ($plan->isa('AtteanX::Store::DBI::Plan')) {
-									my $var	= $varexpr->value;
-									my $varname	= $var->value;
-									if (exists $plan->variables->{ $var->value }) {
-										my ($table, $col)	= @{ $plan->variables->{ $var->value } };
-										my $literal	= $pat->value;
-										my $ref	= join('.', map { $self->dbh->quote_identifier($_) } ($table, $col));
-										my $typecol		= $self->dbh->quote_identifier('type');
-										my $termtable	= "tf$counter";
-										push(@{ $plan->tables }, ['term', $termtable]);
+					my ($varexpr, $pat)	= @{ $e->children };
+					if ($varexpr->isa('Attean::ValueExpression') and $varexpr->value->does('Attean::API::Variable') and $pat->isa('Attean::ValueExpression') and $pat->value->does('Attean::API::Literal')) {
+						if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs, %args)) {
+							if ($plan->isa('AtteanX::Store::DBI::Plan')) {
+								my $var	= $varexpr->value;
+								my $varname	= $var->value;
+								if (exists $plan->variables->{ $var->value }) {
+									my ($table, $col)	= @{ $plan->variables->{ $var->value } };
+									my $literal	= $pat->value;
+									my $ref	= join('.', map { $self->dbh->quote_identifier($_) } ($table, $col));
+									my $typecol		= $self->dbh->quote_identifier('type');
+									my $termtable	= "tf$counter";
+									push(@{ $plan->tables }, ['term', $termtable]);
 
-										push(@{ $plan->where }, "$ref = $termtable.term_id");
-										push(@{ $plan->where }, "$termtable.$typecol = ?");
-										push(@{ $plan->where }, "LOCATE(?, $termtable.value) = ?");
-
-										push(@{ $plan->bindings }, 'literal');
-										push(@{ $plan->bindings }, $literal->value);
-										push(@{ $plan->bindings }, 1);
+									my $db	= $self->database_type;
+									return unless ($db eq 'mysql' or $db eq 'postgresql');
 									
-										if (my $lang = $literal->language) {
-											push(@{ $plan->where }, "$termtable.language = ?");
-											push(@{ $plan->bindings }, $lang);
-										} else {
-											my $xs	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#string' );
-											my $id	= $self->_get_term_id($xs);
-											push(@{ $plan->where }, "$termtable.datatype = ?");
-											push(@{ $plan->bindings }, $id);
-										}
-										return $plan;
+									push(@{ $plan->where }, "$ref = $termtable.term_id");
+									push(@{ $plan->where }, "$termtable.$typecol = ?");
+									if ($db eq 'mysql') {
+										push(@{ $plan->where }, "LOCATE(?, $termtable.value) = ?");
+									} elsif ($db eq 'postgresql') {
+										push(@{ $plan->where }, "STRPOS($termtable.value, ?) = ?");
 									}
+
+									push(@{ $plan->bindings }, 'literal');
+									push(@{ $plan->bindings }, $literal->value);
+									push(@{ $plan->bindings }, 1);
+								
+									if (my $lang = $literal->language) {
+										push(@{ $plan->where }, "$termtable.language = ?");
+										push(@{ $plan->bindings }, $lang);
+									} else {
+										my $xs	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#string' );
+										my $id	= $self->_get_term_id($xs);
+										push(@{ $plan->where }, "$termtable.datatype = ?");
+										push(@{ $plan->bindings }, $id);
+									}
+									return $plan;
 								}
 							}
 						}
