@@ -600,7 +600,7 @@ returns undef.
 									push(@{ $plan->tables }, ['term', $termtable]);
 
 									my $db	= $self->database_type;
-									return unless ($db eq 'mysql' or $db eq 'postgresql');
+									return unless ($db eq 'mysql' or $db eq 'postgresql' or $db eq 'sqlite');
 									
 									push(@{ $plan->where }, "$ref = $termtable.term_id");
 									push(@{ $plan->where }, "$termtable.$typecol = ?");
@@ -608,6 +608,8 @@ returns undef.
 										push(@{ $plan->where }, "LOCATE(?, $termtable.value) = ?");
 									} elsif ($db eq 'postgresql') {
 										push(@{ $plan->where }, "STRPOS($termtable.value, ?) = ?");
+									} elsif ($db eq 'sqlite') {
+										push(@{ $plan->where }, "INSTR($termtable.value, ?) = ?");
 									}
 
 									push(@{ $plan->bindings }, 'literal');
