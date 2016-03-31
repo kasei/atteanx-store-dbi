@@ -584,7 +584,7 @@ returns undef.
 							}
 						}
 					}
-				} elsif ($e->operator eq 'STRSTARTS') {
+				} elsif ($e->operator eq 'STRSTARTS' or $e->operator eq 'CONTAINS') {
 					my ($varexpr, $pat)	= @{ $e->children };
 					if ($varexpr->isa('Attean::ValueExpression') and $varexpr->value->does('Attean::API::Variable') and $pat->isa('Attean::ValueExpression') and $pat->value->does('Attean::API::Literal')) {
 						if (my ($plan) = $self->plans_for_algebra($algebra->child, $model, $active_graphs, $default_graphs, %args)) {
@@ -604,18 +604,19 @@ returns undef.
 									
 									push(@{ $plan->where }, "$ref = $termtable.term_id");
 									push(@{ $plan->where }, "$termtable.$typecol = ?");
+									my $op	= ($e->operator eq 'STRSTARTS') ? '=' : '>=';
 									if ($db eq 'mysql') {
-										push(@{ $plan->where }, "LOCATE(?, $termtable.value) = ?");
+										push(@{ $plan->where }, "LOCATE(?, $termtable.value) ${op} ?");
 										push(@{ $plan->bindings }, 'literal');
 										push(@{ $plan->bindings }, $literal->value);
 										push(@{ $plan->bindings }, 1);
 									} elsif ($db eq 'postgresql') {
-										push(@{ $plan->where }, "STRPOS($termtable.value, ?) = ?");
+										push(@{ $plan->where }, "STRPOS($termtable.value, ?) ${op} ?");
 										push(@{ $plan->bindings }, 'literal');
 										push(@{ $plan->bindings }, $literal->value);
 										push(@{ $plan->bindings }, 1);
 									} elsif ($db eq 'sqlite') {
-										push(@{ $plan->where }, "INSTR($termtable.value, ?) = 1");
+										push(@{ $plan->where }, "INSTR($termtable.value, ?) ${op} 1");
 										push(@{ $plan->bindings }, 'literal');
 										push(@{ $plan->bindings }, $literal->value);
 									}
