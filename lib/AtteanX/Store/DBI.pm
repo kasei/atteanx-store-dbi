@@ -625,9 +625,11 @@ returns undef.
 										push(@{ $plan->bindings }, $lang);
 									} else {
 										my $xs	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#string' );
-										my $id	= $self->_get_term_id($xs);
-										push(@{ $plan->where }, "$termtable.datatype_id = ?");
-										push(@{ $plan->bindings }, $id);
+										my $la	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#langString' );
+										my $xid	= $self->_get_term_id($xs);
+										my $lid	= $self->_get_term_id($la);
+										push(@{ $plan->where }, "$termtable.datatype_id IN (?, ?)");
+										push(@{ $plan->bindings }, $xid, $lid);
 									}
 									return $plan;
 								}
