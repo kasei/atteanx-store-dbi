@@ -130,8 +130,10 @@ test 'STRSTARTS' => sub {
 		isa_ok($plan, 'AtteanX::Store::DBI::Plan');
 		my $iter	= $plan->evaluate($model);
 		my @rows	= $iter->elements;
-		is(scalar(@rows), 1, 'result count');
-		is($rows[0]->value('o')->value, 'Hi', 'literal value');
+		is(scalar(@rows), 2, 'result count');
+		foreach my $r (@rows) {
+			like($r->value('o')->value, qr/^H/, 'literal value');
+		}
 	};
 	
 	subtest 'language string' => sub {
