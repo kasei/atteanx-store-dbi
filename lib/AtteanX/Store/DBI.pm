@@ -606,15 +606,19 @@ returns undef.
 									push(@{ $plan->where }, "$termtable.$typecol = ?");
 									if ($db eq 'mysql') {
 										push(@{ $plan->where }, "LOCATE(?, $termtable.value) = ?");
+										push(@{ $plan->bindings }, 'literal');
+										push(@{ $plan->bindings }, $literal->value);
+										push(@{ $plan->bindings }, 1);
 									} elsif ($db eq 'postgresql') {
 										push(@{ $plan->where }, "STRPOS($termtable.value, ?) = ?");
+										push(@{ $plan->bindings }, 'literal');
+										push(@{ $plan->bindings }, $literal->value);
+										push(@{ $plan->bindings }, 1);
 									} elsif ($db eq 'sqlite') {
-										push(@{ $plan->where }, "INSTR($termtable.value, ?) = ?");
+										push(@{ $plan->where }, "INSTR($termtable.value, ?) = 1");
+										push(@{ $plan->bindings }, 'literal');
+										push(@{ $plan->bindings }, $literal->value);
 									}
-
-									push(@{ $plan->bindings }, 'literal');
-									push(@{ $plan->bindings }, $literal->value);
-									push(@{ $plan->bindings }, 1);
 								
 									if (my $lang = $literal->language) {
 										push(@{ $plan->where }, "$termtable.language = ?");
@@ -622,7 +626,7 @@ returns undef.
 									} else {
 										my $xs	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#string' );
 										my $id	= $self->_get_term_id($xs);
-										push(@{ $plan->where }, "$termtable.datatype = ?");
+										push(@{ $plan->where }, "$termtable.datatype_id = ?");
 										push(@{ $plan->bindings }, $id);
 									}
 									return $plan;
@@ -829,12 +833,23 @@ package AtteanX::Store::DBI::Plan 0.012 {
 # 		warn "$sql\n";
 # 		warn "======================================================================\n";
 
-		my $sth		= $dbh->prepare($sql);
 		my $vars	= $self->in_scope_variables;
+		my $sth		= $dbh->prepare($sql);
 		return sub {
+# 			warn "Generating impl by executing SQL";
 			my $rv	= $sth->execute(@bind);
+			unless ($rv) {
+				warn '*** SQL error: ' . $sth->errstr;
+				die;
+			}
 			my $sub	= sub {
+# 				warn '=== Iterator invoked';
+# 				use Data::Dumper;
+# 				warn Dumper($sql, \@bind);
 				if (my $row = $sth->fetchrow_hashref) {
+# 					warn '@@@ Iterator got row';
+# 					warn Dumper($row);
+					
 					my %bindings;
 					foreach my $k (@$vars) {
 						my $key			= $self->rename_mapping->{$k} // $k;
@@ -843,6 +858,8 @@ package AtteanX::Store::DBI::Plan 0.012 {
 					}
 					my $r	= Attean::Result->new( bindings => \%bindings );
 					return $r;
+				} else {
+# 					warn '^^^ Reached end-of-iterator'
 				}
 				return;
 			};
