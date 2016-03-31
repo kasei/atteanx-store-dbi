@@ -22,7 +22,7 @@ sub test_quads {
 	push(@strings, literal('Hi'));
 	push(@strings, langliteral('Hello', 'en'));
 	push(@strings, langliteral('火星', 'ja'));
-	push(@strings, intliteral(787));
+	push(@strings, dtliteral(787, 'http://www.w3.org/2001/XMLSchema#integer'));
 	foreach my $s (@strings) {
 		push(@q, quad(iri('s'), iri('str'), $s, iri('strings')));
 	}
