@@ -603,7 +603,9 @@ returns undef.
 									return unless ($db eq 'mysql' or $db eq 'postgresql' or $db eq 'sqlite');
 									
 									push(@{ $plan->where }, "$ref = $termtable.term_id");
-									push(@{ $plan->where }, "$termtable.$typecol = ?");
+									
+									push(@{ $plan->where }, "$termtable.$typecol = ?");	# TODO: Remove this (and the bindings below) if $varexpr is STR(?var) instead of just ?var.
+									
 									my $op	= ($e->operator eq 'STRSTARTS') ? '=' : '>=';
 									if ($db eq 'mysql') {
 										push(@{ $plan->where }, "LOCATE(?, $termtable.value) ${op} ?");
