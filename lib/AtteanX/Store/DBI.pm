@@ -434,6 +434,20 @@ Returns the database type name as a string (e.g. 'mysql', 'sqlite', or 'postgres
 		return $type;
 	}
 	
+=item C<< initialize_version >>
+
+Insert data into the attean_version table.
+
+=cut
+
+	sub initialize_version {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		$dbh->do('DELETE FROM attean_version');
+		my $sql		= 'INSERT INTO attean_version (attean_version, store_version) VALUES (?, ?);';
+		$dbh->do($sql, undef, $Attean::VERSION, $AtteanX::Store::DBI::VERSION);
+	}
+
 =item C<< create_schema_file >>
 
 Returns the path to the file containing the database DDL for quadstore creation

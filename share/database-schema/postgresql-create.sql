@@ -1,3 +1,10 @@
+CREATE TABLE IF NOT EXISTS attean_version (
+	attean_version VARCHAR(16),
+	store_version VARCHAR(16),
+	created TIMESTAMP DEFAULT NOW(),
+	updated TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TYPE TERM_TYPE AS ENUM ('iri', 'literal', 'blank');
 CREATE TABLE IF NOT EXISTS term (
 	term_id SERIAL PRIMARY KEY,

@@ -73,6 +73,7 @@ if ($command eq 'init') {
 			print "$sql\n";
 		} else {
 			$batch->do($sql);
+			$store->initialize_version;
 		}
 	} else {
 		warn "No schema file available for this database.\n";
