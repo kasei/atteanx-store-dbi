@@ -39,7 +39,7 @@ unless (all { exists $ENV{$_} } qw(ATTEAN_STORE_PG_DATABASE ATTEAN_STORE_PG_HOST
 
 test 'Pg STRSTARTS SARG with string literal' => sub {
 	my $self	= shift;
-	my $store	= $self->create_store(quads => []);
+	my $store	= $self->create_store(quads => $self->test_quads);
 	my $model	= Attean::QuadModel->new( store => $store );
 
 	my $algebra	= Attean->get_parser('SPARQL')->parse('SELECT * WHERE { ?s ?p ?o FILTER STRSTARTS(?o, "foo") }');
@@ -55,7 +55,7 @@ test 'Pg STRSTARTS SARG with string literal' => sub {
 
 test 'Pg STRSTARTS SARG with language literal' => sub {
 	my $self	= shift;
-	my $store	= $self->create_store(quads => []);
+	my $store	= $self->create_store(quads => $self->test_quads);
 	my $model	= Attean::QuadModel->new( store => $store );
 
 	my $algebra	= Attean->get_parser('SPARQL')->parse('SELECT * WHERE { ?s ?p ?o FILTER STRSTARTS(?o, "foo"@en) }');
