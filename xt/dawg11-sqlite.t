@@ -63,7 +63,7 @@ around 'setup' => sub {
 
 after 'teardown' => sub {
 	my $self	= shift;
-# 	unlink($self->file);
+	unlink($self->file);
 };
 
 sub test_model {
