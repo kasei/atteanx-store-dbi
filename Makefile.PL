@@ -35,8 +35,8 @@ requires		'DBI'						=> 0;
 requires		'DBIx::MultiStatementDo'	=> 0;
 
 resources(
-	'homepage'   => "http://search.cpan.org/dist/Attean/",
-	'repository' => "http://github.com/kasei/atteanx-store-dbi/",
+	'homepage'   => "https://metacpan.org/release/AtteanX-Store-DBI/",
+	'repository' => "https://github.com/kasei/atteanx-store-dbi/",
 	'bugtracker' => "https://github.com/kasei/atteanx-store-dbi/issues",
 	'IRC'        => "irc://irc.perl.org/#perlrdf",
 );

@@ -22,11 +22,11 @@ my:project
 	:name					"AtteanX::Store::DBI" ;
 	:shortdesc				"A DBI-backed quadstore for Attean" ;
 	:programming-language	"Perl" ;
-	:created				"2016-02-27"^^xsd:date ;
+	:created				"2016-03-14"^^xsd:date ;
 	:maintainer				my:developer ;
-	:homepage				<http://search.cpan.org/dist/AtteanX::Store::DBI/> ;
+	:homepage				<https://metacpan.org/release/AtteanX-Store-DBI/> ;
 	:bug-database			<https://github.com/kasei/atteanx-store-dbi/issues> ;
-	doap:download-page		<http://search.cpan.org/dist/AtteanX-Store-DBI/> ;
+	doap:download-page		<https://metacpan.org/release/AtteanX-Store-DBI/> ;
 	doap:download-mirror	<http://kasei.us/code/files/> ;
 	:release				my:v_0-001 ;
 	.
