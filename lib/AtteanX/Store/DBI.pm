@@ -84,7 +84,7 @@ Create the tables and indexes required for using the database as a quadstore.
 		my $self	= shift;
 		my $dbh		= $self->dbh;
 		my $batch	= DBIx::MultiStatementDo->new( dbh => $dbh );
-		my $file	= $self->create_schema_file;
+		my $file	= $self->create_schema_file or die 'No schema files available for store initialization';
 		my $sql		= read_file($file);
 		$batch->do($sql);
 	}

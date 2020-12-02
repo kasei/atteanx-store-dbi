@@ -47,13 +47,11 @@ around 'setup' => sub {
 		database	=> $filename,
 	);
 	my $dbh		= DBI->connect(@connect);
-	my $batch	= DBIx::MultiStatementDo->new( dbh => $dbh );
 	my $store	= Attean->get_store('DBI')->new( dbh => $dbh );
-
-	if (my $file = $store->create_schema_file) {
-		my $sql	= read_file($file);
-		$batch->do($sql);
-	} else {
+	eval {
+		$store->init();
+	};
+	if ($@) {
 		plan skip_all => "No schema files available for SQLite";
 		exit(0);
 	}
