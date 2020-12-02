@@ -642,7 +642,7 @@ returns undef.
 										push(@{ $plan->bindings }, $lang);
 									} else {
 										my $xs	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#string' );
-										my $la	= Attean::IRI->new( value => 'http://www.w3.org/2001/XMLSchema#langString' );
+										my $la	= Attean::IRI->new( value => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString' );
 										my $xid	= $self->_get_term_id($xs);
 										my $lid	= $self->_get_term_id($la);
 										push(@{ $plan->where }, "$termtable.datatype_id IN (?, ?)");
