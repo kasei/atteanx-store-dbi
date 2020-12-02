@@ -40,13 +40,16 @@ package AtteanX::Store::DBI {
 	use Encode;
 	use Cache::LRU;
 	use Set::Scalar;
+	use DBIx::MultiStatementDo;
 	use List::MoreUtils qw(zip);
 	use List::Util qw(any all first);
 	use File::ShareDir qw(dist_dir dist_file);
+	use File::Slurp;
 	use Scalar::Util qw(refaddr reftype blessed);
 	use namespace::clean;
 
-	with 'Attean::API::MutableQuadStore', 'Attean::API::BulkUpdatableStore';
+	with 'Attean::API::MutableQuadStore';
+	with 'Attean::API::BulkUpdatableStore';
 	with 'Attean::API::QuadStore';
 	with 'Attean::API::CostPlanner';
 
@@ -72,6 +75,33 @@ supplied database handle.
 	has _i2t_cache => (is => 'ro', default => sub { Cache::LRU->new( size => 256 ) });
 	has _t2i_cache => (is => 'ro', default => sub { Cache::LRU->new( size => 256 ) });
 
+=item C<< init() >>
+
+Create the tables and indexes required for using the database as a quadstore.
+
+=cut
+	sub init {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		my $batch	= DBIx::MultiStatementDo->new( dbh => $dbh );
+		my $file	= $self->create_schema_file;
+		my $sql		= read_file($file);
+		$batch->do($sql);
+	}
+	
+=item C<< temporary_store() >>
+
+Returns a temporary (in-memory, SQLite) store.
+
+=cut
+	sub temporary_store {
+		my $class	= shift;
+		my $dbh		= DBI->connect('dbi:SQLite:dbname=:memory:', '', '');
+		my $store	= $class->new(dbh => $dbh);
+		$store->init();
+		return $store;
+	}
+	
 	sub _last_insert_id {
 		my $self	= shift;
 		my $table	= shift;
@@ -396,6 +426,42 @@ Removes all quads with the given C<< $graph >>.
 		my $sth		= $self->dbh->prepare('DELETE FROM quad WHERE graph = ?');
 		$sth->execute($gid);
 		return;
+	}
+	
+=item C<< begin_transaction >>
+
+Begin a database transaction.
+
+=cut
+
+	sub begin_transaction {
+# 		warn 'begin transaction';
+		my $self	= shift;
+		$self->dbh->begin_work;
+	}
+	
+=item C<< abort_transaction >>
+
+Rollback the current database transaction.
+
+=cut
+
+	sub abort_transaction {
+# 		warn 'abort transaction';
+		my $self	= shift;
+		$self->dbh->rollback;
+	}
+	
+=item C<< end_transaction >>
+
+Commit the current database transaction.
+
+=cut
+
+	sub end_transaction {
+# 		warn 'end transaction';
+		my $self	= shift;
+		$self->dbh->commit;
 	}
 	
 =item C<< begin_bulk_updates >>
