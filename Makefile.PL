@@ -15,6 +15,7 @@ test_requires	'Test::More'				=> 0.88;
 test_requires	'Test::Roo'					=> 0;
 test_requires	'HTTP::Message::PSGI'		=> 0;
 test_requires	'Test::LWP::UserAgent'		=> 0;
+test_requires	'DBD::SQLite'				=> 0;
 
 perl_version	'5.014';
 
