@@ -527,10 +527,20 @@ for the current database type if available, undef otherwise.
 	sub create_schema_file {
 		my $self	= shift;
 		my $type	= $self->database_type;
-		my $dir		= $ENV{ATTEAN_SHAREDIR} || eval { dist_dir('AtteanX-Store-DBI') } || 'share';
-		my $file	= File::Spec->catfile($dir, 'database-schema', sprintf('%s-create.sql', $type));
-		if (-r $file) {
-			return $file;
+		my @options;
+		push(@options, $ENV{ATTEAN_SHAREDIR}) if ($ENV{ATTEAN_SHAREDIR});
+		push(@options, $ENV{ATTEANX_STORE_DBI_SHAREDIR}) if ($ENV{ATTEANX_STORE_DBI_SHAREDIR});
+		eval {
+			my $path	= dist_dir('AtteanX-Store-DBI');
+			push(@options, $path);
+		};
+		push(@options, 'share');
+		foreach my $dir (@options) {
+			my $file	= sprintf('%s-create.sql', $type);
+			my $abs	= File::Spec->catfile($dir, 'database-schema', $file);
+			if (-r $abs) {
+				return $abs;
+			}
 		}
 		return;
 	}
@@ -602,7 +612,6 @@ C<< AtteanX::Store::DBI >> object.
 		my $dsn;
 		my %connect_args;
 		$connect_args{RaiseError}	= 1;
-
 		if ($type eq 'mysql') {
 			$dsn		= "DBI:mysql:database=${database}";
 			if (defined($host)) {
