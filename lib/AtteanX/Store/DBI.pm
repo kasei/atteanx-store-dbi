@@ -96,7 +96,10 @@ Returns a temporary (in-memory, SQLite) store.
 =cut
 	sub temporary_store {
 		my $class	= shift;
-		my $dbh		= DBI->connect('dbi:SQLite:dbname=:memory:', '', '');
+		my $dbh		= DBI->connect('dbi:SQLite:dbname=:memory:', '', '', {
+			RaiseError		=> 1,
+			sqlite_unicode	=> 1,
+		});
 		my $store	= $class->new(dbh => $dbh);
 		$store->init();
 		return $store;
