@@ -1,6 +1,7 @@
 use Test::Roo;
 use Test::Exception;
 use List::MoreUtils qw(all);
+use Module::Load::Conditional qw[can_load];
 
 use v5.14;
 use warnings;
@@ -30,6 +31,10 @@ sub create_store {
 		$store->add_quad($q);
 	}
 	return $store;
+}
+
+unless (can_load( modules => { 'DBD::mysql' => 0 })) {
+	plan skip_all => "DBD::mysql not available.";
 }
 
 unless (all { exists $ENV{$_} } qw(ATTEAN_STORE_MYSQL_DATABASE ATTEAN_STORE_MYSQL_HOST ATTEAN_STORE_MYSQL_USER ATTEAN_STORE_MYSQL_PASSWORD)) {

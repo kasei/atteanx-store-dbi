@@ -1,6 +1,7 @@
 use Test::Roo;
 use Test::Exception;
 use List::MoreUtils qw(all);
+use Module::Load::Conditional qw[can_load];
 
 use v5.14;
 use warnings;
@@ -32,8 +33,8 @@ sub create_store {
 	return $store;
 }
 
-unless (all { exists $ENV{$_} } qw(ATTEAN_STORE_PG_DATABASE ATTEAN_STORE_PG_HOST ATTEAN_STORE_PG_USER ATTEAN_STORE_PG_PASSWORD)) {
-	plan skip_all => "Set the MySQL environment variables to run these tests (ATTEAN_STORE_PG_DATABASE, ATTEAN_STORE_PG_HOST, ATTEAN_STORE_PG_USER, ATTEAN_STORE_PG_PASSWORD)";
+unless (can_load( modules => { 'DBD::mysql' => 0 })) {
+	plan skip_all => "DBD::Pg not available.";
 }
 
 test 'Pg STRSTARTS SARG with string literal' => sub {
