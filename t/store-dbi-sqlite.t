@@ -72,6 +72,24 @@ test 'SQLite STRSTARTS SARG with language literal' => sub {
 	is_deeply([splice(@bind, 1)], ['literal', 'foo', 'en'], 'bound values');
 };
 
+test 'SQLite get_quads with triple term pattern' => sub {
+	my $self	= shift;
+	my $t1		= triple(iri('s'), iri('p1'), iri('o1'));
+	my $t2		= triple(iri('s'), iri('p2'), iri('o2'));
+	my $q1		= quad(iri('a'), iri('b'), iri('c'), iri('g'));
+	my $q2		= quad(iri('a'), iri('b1'), $t1, iri('g'));
+	my $q3		= quad(iri('a'), iri('b2'), $t2, iri('g'));
+	my $store	= $self->create_store(quads => [$q1, $q2, $q3]);
+
+	my $tp		= Attean::TriplePattern->new( object => iri('o2') );
+	my $iter	= $store->get_quads(undef, undef, $tp);
+	my @quads	= $iter->elements;
+	is(scalar(@quads), 1);
+	my $got		= $quads[0];
+	is($got->predicate->value, 'b2'); # b2 predciate correlated with the object triple term with the o2 object
+};
+
+
 with 'Test::Attean::QuadStore', 'Test::Attean::MutableQuadStore';
 with 'Test::AtteanX::Store::DBI';
 run_me;
