@@ -16,6 +16,7 @@ use List::Util qw(all);
 use FindBin qw($Bin);
 use Attean;
 use AtteanX::Store::DBI;
+use Module::Load::Conditional qw(can_load);
 use namespace::clean;
 
 unless (can_load( modules => { 'DBD::mysql' => 0 })) {

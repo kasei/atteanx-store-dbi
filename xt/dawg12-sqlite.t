@@ -16,12 +16,12 @@ use List::Util qw(all);
 use FindBin qw($Bin);
 use Attean;
 use AtteanX::Store::DBI;
-use Module::Load::Conditional qw(can_load);
 use File::Slurp;
 use File::Temp qw(tempfile);
 use DBIx::MultiStatementDo;
 use Types::Standard qw(Str ArrayRef);
 use Class::Method::Modifiers;
+use Module::Load::Conditional qw(can_load);
 use namespace::clean;
 
 unless (can_load( modules => { 'DBD::sqlite' => 0 })) {
