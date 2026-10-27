@@ -14,9 +14,14 @@ use autodie;
 use Test::Roo;
 use List::Util qw(all);
 use FindBin qw($Bin);
+use Module::Load::Conditional qw(can_load);
 use Attean;
 use AtteanX::Store::DBI;
 use namespace::clean;
+
+unless (can_load( modules => { 'DBD::mysql' => 0 })) {
+	plan skip_all => "DBD::Pg not available.";
+}
 
 with 'Test::Attean::SPARQLSuite';
 
