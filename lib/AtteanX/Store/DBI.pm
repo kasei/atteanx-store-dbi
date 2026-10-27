@@ -48,6 +48,8 @@ package AtteanX::Store::DBI {
 	use Scalar::Util qw(refaddr reftype blessed);
 	use namespace::clean;
 
+	our $CURRENT_MODEL_VERSION	= 1;
+	
 	with 'Attean::API::MutableQuadStore';
 	with 'Attean::API::BulkUpdatableStore';
 	with 'Attean::API::QuadStore';
@@ -241,15 +243,18 @@ Returns a temporary (in-memory, SQLite) store.
 				$tid	= $self->_last_insert_id('term');
 			}
 		} elsif ($term->does('Attean::API::Triple')) {
+			my $insert_triple_term_sth	= $dbh->prepare('INSERT INTO triple_term (term_id, subject, predicate, object) VALUES (?, ?, ?, ?)');
 			my @terms	= $term->values;
 			my @ids		= map { $self->_get_or_create_term_id($_) } @terms;
 			my $value	= join(' ', map { +$_ } @ids);
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
-			$sth->execute('triple', $value);
+			my $sth	= $dbh->prepare('SELECT term_id FROM triple_term WHERE subject = ? AND predicate = ? AND object = ?');
+			
+			$sth->execute(@ids);
 			($tid) = $sth->fetchrow_array;
 			unless (defined($tid)) {
 				$insert_term_sth->execute('triple', $value, undef, undef);
 				$tid	= $self->_last_insert_id('term');
+				$insert_triple_term_sth->execute($tid, @ids);
 			}
 		} else {
 			die "Failed to get ID for term: " . $term->as_string;
@@ -566,8 +571,8 @@ Insert data into the attean_version table.
 		my $self	= shift;
 		my $dbh		= $self->dbh;
 		$dbh->do('DELETE FROM attean_version');
-		my $sql		= 'INSERT INTO attean_version (attean_version, store_version) VALUES (?, ?);';
-		$dbh->do($sql, undef, $Attean::VERSION, $AtteanX::Store::DBI::VERSION);
+		my $sql		= 'INSERT INTO attean_version (attean_version, model_version, store_version) VALUES (?, ?, ?);';
+		$dbh->do($sql, undef, $Attean::VERSION, $CURRENT_MODEL_VERSION, $AtteanX::Store::DBI::VERSION);
 	}
 
 =item C<< create_schema_file >>
