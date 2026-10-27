@@ -678,7 +678,7 @@ C<< AtteanX::Store::DBI >> object.
 			if (defined($port)) {
 				$dsn	.= ";port=$port";
 			}
-			$connect_args{mysql_enable_utf8}	= 1;
+			$connect_args{mysql_enable_utf8mb4}	= 1;
 		} elsif ($type eq 'postgresql') {
 			$dsn		= "DBI:Pg:dbname=${database}";
 			if (defined($host)) {
