@@ -38,7 +38,7 @@ sub create_store {
 	return $store;
 }
 
-unless (can_load( modules => { 'DBD::mysql' => 0 })) {
+unless (can_load( modules => { 'DBD::Pg' => 0 })) {
 	plan skip_all => "DBD::Pg not available.";
 }
 
