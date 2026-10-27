@@ -1,13 +1,15 @@
 CREATE TABLE IF NOT EXISTS attean_version (
 	attean_version VARCHAR(16),
 	store_version VARCHAR(16),
+	model_version INTEGER NOT NULL,
+	notes LONGTEXT,
 	created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 CREATE TABLE IF NOT EXISTS term (
 	term_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-	`type` ENUM('iri', 'literal', 'blank'),
+	`type` ENUM('iri', 'literal', 'blank', 'triple'),
 	datatype_id BIGINT REFERENCES term(term_id),
 	value LONGTEXT NOT NULL,
 	language TEXT,
@@ -21,5 +23,8 @@ CREATE TABLE IF NOT EXISTS quad (
 	graph BIGINT UNSIGNED NOT NULL REFERENCES term,
 	PRIMARY KEY (subject, predicate, object, graph),
 	KEY (predicate,object,graph,subject),
+	KEY (,graphpredicate,subject,object),
 	INDEX (graph)
 );
+
+INSERT INTO attean_version (store_version, notes) VALUES ("", "0.004", "populated by schema creation");

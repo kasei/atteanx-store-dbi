@@ -1,6 +1,8 @@
 CREATE TABLE IF NOT EXISTS attean_version (
 	attean_version VARCHAR(16),
 	store_version VARCHAR(16),
+	model_version INTEGER NOT NULL,
+	notes LONGTEXT,
 	created DATETIME DEFAULT CURRENT_TIMESTAMP,
 	updated DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -24,4 +26,5 @@ CREATE TABLE IF NOT EXISTS quad (
 );
 
 CREATE INDEX quad_pogs_idx ON quad (predicate,object,graph,subject);
+CREATE INDEX quad_gpso_idx ON quad (graph,predicate,subject,object);
 CREATE INDEX quad_g ON quad (graph);

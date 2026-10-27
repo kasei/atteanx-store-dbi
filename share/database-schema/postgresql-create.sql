@@ -1,11 +1,13 @@
 CREATE TABLE IF NOT EXISTS attean_version (
 	attean_version VARCHAR(16),
 	store_version VARCHAR(16),
+	model_version INTEGER NOT NULL,
+	notes TEXT,
 	created TIMESTAMP DEFAULT NOW(),
 	updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TYPE TERM_TYPE AS ENUM ('iri', 'literal', 'blank');
+CREATE TYPE TERM_TYPE AS ENUM ('iri', 'literal', 'blank', 'triple');
 CREATE TABLE IF NOT EXISTS term (
 	term_id SERIAL PRIMARY KEY,
 	type TERM_TYPE,
@@ -25,3 +27,4 @@ CREATE TABLE IF NOT EXISTS quad (
 
 CREATE INDEX IF NOT EXISTS quad_graph_idx ON quad (graph);
 CREATE INDEX IF NOT EXISTS quad_pogs_idx ON quad (predicate,object,graph,subject);
+CREATE INDEX IF NOT EXISTS quad_gpso_idx ON quad (graph,predicate,subject,object);
