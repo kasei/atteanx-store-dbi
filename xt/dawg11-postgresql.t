@@ -52,12 +52,17 @@ sub test_model {
 		exit(0);
 	}
 
+	my @args;
+	if (my $port = $ENV{ATTEAN_STORE_PG_PORT}) {
+		push(@args, port => $port);
+	}
 	my @connect		= AtteanX::Store::DBI->dbi_connect_args(
 		'postgresql',
 		database	=> $ENV{ATTEAN_STORE_PG_DATABASE},
 		host		=> $ENV{ATTEAN_STORE_PG_HOST},
 		user		=> $ENV{ATTEAN_STORE_PG_USER},
 		password	=> $ENV{ATTEAN_STORE_PG_PASSWORD},
+		@args
 	);
 	my $dbh			= DBI->connect(@connect);
 	my $store		= Attean->get_store('DBI')->new( dbh => $dbh );

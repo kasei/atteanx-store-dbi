@@ -52,12 +52,17 @@ sub test_model {
 		exit(0);
 	}
 
+	my @args;
+	if (my $port = $ENV{ATTEAN_STORE_MYSQL_PORT}) {
+		push(@args, port => $port);
+	}
 	my @connect		= AtteanX::Store::DBI->dbi_connect_args(
 		'mysql',
 		database	=> $ENV{ATTEAN_STORE_MYSQL_DATABASE},
 		host		=> $ENV{ATTEAN_STORE_MYSQL_HOST},
 		user		=> $ENV{ATTEAN_STORE_MYSQL_USER},
 		password	=> $ENV{ATTEAN_STORE_MYSQL_PASSWORD},
+		@args
 	);
 	my $dbh			= DBI->connect(@connect);
 	my $store		= Attean->get_store('DBI')->new( dbh => $dbh );
