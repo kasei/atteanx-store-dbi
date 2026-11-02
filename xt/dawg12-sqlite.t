@@ -39,7 +39,7 @@ sub BUILD {
 	my $base		= (defined($env_path) and -d $env_path) ? $env_path : File::Spec->catfile( $Bin, 'data', 'rdf-tests' );
 	my $path		= File::Spec->catfile( $base, 'sparql', 'sparql12' );
 	$self->tests_dir($path);
-	$self->enable_earl(conf => { store => 'DBI/sqlite', 'eval' => 'QueryPlanner' });
+	$self->enable_earl(filename => 'attean-sparql12-dbi-sqlite-planner.ttl', conf => { store => 'DBI/sqlite', 'eval' => 'QueryPlanner' });
 }
 
 my %args	= (use_idp_planner => 1);
