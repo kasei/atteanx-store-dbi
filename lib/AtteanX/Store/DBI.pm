@@ -120,7 +120,7 @@ Returns a temporary (in-memory, SQLite) store.
 		if (my $term = $self->_i2t_cache->get($id)) {
 			return $term;
 		}
-		my $sth		= $self->dbh->prepare('SELECT term.type, term.value, dtterm.value AS datatype, term.language FROM term LEFT JOIN term dtterm ON (term.datatype_id = dtterm.term_id) WHERE term.term_id = ?');
+		my $sth		= $self->dbh->prepare('SELECT term.type, term.value, dtterm.value AS datatype, term.language, tt.subject, tt.predicate, tt.object FROM term LEFT JOIN term dtterm ON (term.datatype_id = dtterm.term_id) LEFT JOIN triple_term tt ON (term.term_id = tt.term_id) WHERE term.term_id = ?');
 		$sth->execute($id);
 		my $row		= $sth->fetchrow_hashref;
 		my $type	= $row->{type};
@@ -145,7 +145,7 @@ Returns a temporary (in-memory, SQLite) store.
 			}
 			$term	= Attean::Literal->new( %args );
 		} elsif ($type eq 'triple') {
-			my @ids	= split(' ', $value);
+			my @ids	= @{ $row }{ qw(subject predicate object) };
 			my ($s,$p,$o)	= map { $self->_get_term($_) } @ids;
 			$term	= Attean::Triple->new(subject => $s, predicate => $p, object => $o);
 		}
