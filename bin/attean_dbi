@@ -64,7 +64,6 @@ die "Unrecoognized database type '$type'. Must be one of:\n\n$TYPES_STRING\n\n" 
 
 $args{database}	= shift || die "No database name given.\n";
 
-
 my @connect	= AtteanX::Store::DBI->dbi_connect_args($type, %args);
 my $dbh		= DBI->connect(@connect);
 my $store	= AtteanX::Store::DBI->new( dbh => $dbh );
@@ -113,6 +112,7 @@ if ($command eq 'init') {
 	die "No suitable serializer found" if (not $sclass);
 	my $ser			= $sclass->new();
 	my $quads		= $store->get_quads();
+	binmode(STDOUT, ":utf8");
 	$ser->serialize_iter_to_io(\*STDOUT, $quads);
 } else {
 	die "Unexpected command: [$command]";
