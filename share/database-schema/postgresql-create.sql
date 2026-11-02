@@ -29,14 +29,14 @@ CREATE TABLE IF NOT EXISTS triple_term (
 	term_id BIGINT PRIMARY KEY REFERENCES term,
 	subject BIGINT NOT NULL REFERENCES term,
 	predicate BIGINT NOT NULL REFERENCES term,
-	object BIGINT NOT NULL REFERENCES term,
-	KEY (subject, predicate, object),
-	KEY (predicate, object, subject),
-	KEY (object, subject, predicate)
+	object BIGINT NOT NULL REFERENCES term
 );
 
 CREATE INDEX IF NOT EXISTS quad_graph_idx ON quad (graph);
 CREATE INDEX IF NOT EXISTS quad_pogs_idx ON quad (predicate,object,graph,subject);
 CREATE INDEX IF NOT EXISTS quad_gpso_idx ON quad (graph,predicate,subject,object);
+CREATE INDEX IF NOT EXISTS triple_term_spo ON triple_term (subject, predicate, object);
+CREATE INDEX IF NOT EXISTS triple_term_pos ON triple_term (predicate, object, subject);
+CREATE INDEX IF NOT EXISTS triple_term_osp ON triple_term (object, subject, predicate);
 
-INSERT INTO attean_version (attean_version, store_version, model_version, notes) VALUES ("", "0.004", 1, "populated by schema creation");
+INSERT INTO attean_version (attean_version, store_version, model_version, notes) VALUES ('', '0.004', 1, 'populated by schema creation');
