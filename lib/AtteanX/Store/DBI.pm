@@ -405,6 +405,15 @@ the set of graphs of the stored quads.
 
 	# -----------------------------------------------------------------------------
 
+	around 'add_iter' => sub {
+		my $orig	= shift;
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		local($dbh->{AutoCommit})	= 0;
+		return $self->$orig(@_);
+	};
+
+
 =item C<< add_quad ( $quad ) >>
 
 Adds the specified C<$quad> to the underlying model.
