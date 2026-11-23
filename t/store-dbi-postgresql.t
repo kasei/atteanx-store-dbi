@@ -42,6 +42,11 @@ unless (can_load( modules => { 'DBD::Pg' => 0 })) {
 	plan skip_all => "DBD::Pg not available.";
 }
 
+unless (all { exists $ENV{$_} } qw(ATTEAN_STORE_PG_DATABASE ATTEAN_STORE_PG_HOST ATTEAN_STORE_PG_USER ATTEAN_STORE_PG_PASSWORD)) {
+	plan skip_all => "Set the MySQL environment variables to run these tests (ATTEAN_STORE_PG_DATABASE, ATTEAN_STORE_PG_HOST, ATTEAN_STORE_PG_PORT, ATTEAN_STORE_PG_USER, ATTEAN_STORE_PG_PASSWORD)";
+}
+
+
 test 'Pg STRSTARTS SARG with string literal' => sub {
 	my $self	= shift;
 	my $store	= $self->create_store(quads => $self->test_quads);
