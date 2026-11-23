@@ -673,8 +673,19 @@ C<< AtteanX::Store::DBI >> object.
 
 	sub dbi_connect_args {
 		my $self		= shift;
-		my $type		= blessed($self) ? $self->database_type : shift;
-		my %args		= @_;
+		my $type;
+		my %args;
+		if (blessed($self)) {
+			$type	= $self->database_type;
+		} else {
+			if (scalar(@_) % 2 == 0) {
+				%args	= @_;
+				$type	= $args{type};
+			} else {
+				$type		= shift;
+				%args		= @_;
+			}
+		}
 		my $database	= $args{database};
 		my $user		= $args{user};
 		my $password	= $args{password};
