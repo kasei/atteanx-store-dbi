@@ -1,6 +1,6 @@
 use Test::Roo;
 use Test::Exception;
-use List::MoreUtils qw(all);
+use List::Util qw(all);
 use Module::Load::Conditional qw[can_load];
 
 use v5.14;

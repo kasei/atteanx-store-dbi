@@ -23,7 +23,6 @@ test_requires	'DBD::SQLite'				=> 0;
 perl_version	'5.014';
 
 requires		'Attean'					=> 0.040;
-requires		'List::MoreUtils'			=> 0;
 requires		'Moo'						=> 1.006000;
 requires		'MooX::Log::Any'			=> 0;
 requires		'namespace::clean'			=> 0;

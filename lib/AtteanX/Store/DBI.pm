@@ -41,7 +41,6 @@ package AtteanX::Store::DBI {
 	use Cache::LRU;
 	use Set::Scalar;
 	use DBIx::MultiStatementDo;
-	use List::MoreUtils qw(zip);
 	use List::Util qw(any all first mesh);
 	use File::ShareDir qw(dist_dir dist_file);
 	use File::Slurp;
@@ -315,7 +314,9 @@ position.
 			return unless ($ok);
 			ROW: while (my $row	= $sth->fetchrow_arrayref) {
 				my @terms	= map { $self->_get_term($_) } @$row;
-				my $quad	= Attean::Quad->new(zip @pos_names, @terms);
+				my %args;
+				@args{ @pos_names }	= @terms;
+				my $quad	= Attean::Quad->new(%args);
 				if (%post_filters) {
 					# there was a triple term pattern in the match request, so validate that here
 					foreach my $pos (keys %post_filters) {
