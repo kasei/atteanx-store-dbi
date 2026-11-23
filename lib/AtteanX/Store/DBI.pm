@@ -43,7 +43,6 @@ package AtteanX::Store::DBI {
 	use File::Slurp;
 	use List::MoreUtils qw(zip);
 	use List::Util qw(any all first mesh);
-	use List::Util qw(any all first mesh);
 	use Scalar::Util qw(refaddr reftype blessed);
 	use Set::Scalar;
 	use Type::Tiny::Role;
