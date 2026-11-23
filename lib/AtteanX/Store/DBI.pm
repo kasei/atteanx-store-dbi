@@ -829,9 +829,14 @@ returns undef.
 			my @bind;
 			my $graph	= Attean::Variable->new(value => '___g');
 			$seen_vars{ $graph->value }++;
-			my $graph_values	= sprintf('(%s)', join(', ', ('?') x scalar(@graph_ids)));
-			push(@bind, @graph_ids);
-			my @where	= ("t0.graph IN $graph_values");
+			my @where;
+			if (scalar(@graph_ids)) {
+				my $graph_values	= sprintf('(%s)', join(', ', ('?') x scalar(@graph_ids)));
+				push(@bind, @graph_ids);
+				push(@where, "t0.graph IN $graph_values");
+			} else {
+				push(@where, "0");
+			}
 			
 			foreach my $t (@triples) {
 				my $table	= 't' . $tcounter++;
