@@ -75,9 +75,77 @@ supplied database handle.
 
 =cut
 
+	sub BUILDARGS {
+		my $class	= shift;
+		my @params	= @_;
+		my @connect;
+		
+		my %args;
+		if (scalar(@params) % 2 == 0) {
+			my %params	= @params;
+			
+			if (my $i = delete $params{'init'}) {
+				$args{'should_init'}	= $i;
+			}
+			
+			if (my $dbh = $params{ dbh }) {
+				return \%params;
+			}
+			my $type	= delete($params{ type });
+			@connect	= $class->dbi_connect_args($type, %params);
+		} else {
+			my $type	= shift(@params);
+			@connect	= $class->dbi_connect_args($type, @params);
+		}
+		$args{dbh}	= DBI->connect(@connect);
+		return \%args;
+	}
+
+	has should_init => (is => 'ro', isa => Bool, default => 0);
 	has dbh => (is => 'ro', isa => InstanceOf['DBI::db'], required => 1);
 	has _i2t_cache => (is => 'ro', default => sub { Cache::LRU->new( size => 256 ) });
 	has _t2i_cache => (is => 'ro', default => sub { Cache::LRU->new( size => 256 ) });
+	has insert_term_sth	=> (is => 'ro', lazy => 1, default => sub {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		return $dbh->prepare('INSERT INTO term (type, value, datatype_id, language) VALUES (?, ?, ?, ?)');
+	});
+	has insert_quad_sth	=> (is => 'ro', lazy => 1, default => sub {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		my $type	= $self->database_type;
+		my $sql		= 'INSERT INTO quad (subject, predicate, object, graph) VALUES (?, ?, ?, ?)';
+		if ($type eq 'sqlite') {
+			$sql	= 'INSERT OR IGNORE INTO quad (subject, predicate, object, graph) VALUES (?, ?, ?, ?)';
+		} elsif ($type eq 'mysql') {
+			$sql	= 'INSERT IGNORE INTO quad (subject, predicate, object, graph) VALUES (?, ?, ?, ?)';
+		} elsif ($type eq 'postgresql') {
+			$sql	= 'INSERT INTO quad (subject, predicate, object, graph) SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM quad WHERE subject = ? AND predicate = ? AND object = ? AND graph = ?)';
+		}
+		return $self->dbh->prepare($sql);
+	});
+	has get_term_sth	=> (is => 'ro', lazy => 1, default => sub {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		return $self->dbh->prepare('SELECT term.type, term.value, dtterm.value AS datatype, term.language, tt.subject, tt.predicate, tt.object FROM term LEFT JOIN term dtterm ON (term.datatype_id = dtterm.term_id) LEFT JOIN triple_term tt ON (term.term_id = tt.term_id) WHERE term.term_id = ?');
+	});
+	has get_term_id_sth	=> (is => 'ro', lazy => 1, default => sub {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		return $self->dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
+	});
+	has get_literal_term_id_sth	=> (is => 'ro', lazy => 1, default => sub {
+		my $self	= shift;
+		my $dbh		= $self->dbh;
+		return $self->dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ? AND datatype_id = ? AND language = ?');
+	});
+
+	sub BUILD {
+		my $self	= shift;
+		if ($self->should_init) {
+			$self->init();
+		}
+	}
 
 =item C<< init() >>
 
@@ -122,7 +190,7 @@ Returns a temporary (in-memory, SQLite) store.
 		if (my $term = $self->_i2t_cache->get($id)) {
 			return $term;
 		}
-		my $sth		= $self->dbh->prepare('SELECT term.type, term.value, dtterm.value AS datatype, term.language, tt.subject, tt.predicate, tt.object FROM term LEFT JOIN term dtterm ON (term.datatype_id = dtterm.term_id) LEFT JOIN triple_term tt ON (term.term_id = tt.term_id) WHERE term.term_id = ?');
+		my $sth		= $self->get_term_sth;
 		$sth->execute($id);
 		my $row		= $sth->fetchrow_hashref;
 		my $type	= $row->{type};
@@ -167,18 +235,18 @@ Returns a temporary (in-memory, SQLite) store.
 		my $dbh			= $self->dbh;
 		my $tid;
 		if ($term->does('Attean::API::IRI')) {
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
+			my $sth	= $self->get_term_id_sth;
 			my $value	= $term->value;
 			$sth->execute('iri', $value);
 			($tid) = $sth->fetchrow_array;
 		} elsif ($term->does('Attean::API::Blank')) {
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
+			my $sth	= $self->get_term_id_sth;
 			my $value	= $term->value;
 			$sth->execute('blank', $value);
 			($tid) = $sth->fetchrow_array;
 		} elsif ($term->does('Attean::API::Literal')) {
 			my $dtid	= $self->_get_or_create_term_id($term->datatype);
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ? AND datatype_id = ? AND language = ?');
+			my $sth	= $self->get_literal_term_id_sth;
 			my $value	= $term->value;
 			my $lang	= $term->lang_dir;
 			$sth->execute('literal', $value, $dtid, $lang);
@@ -187,7 +255,7 @@ Returns a temporary (in-memory, SQLite) store.
 			my @terms	= $term->values;
 			my @ids		= map { $self->_get_term_id($_) || 0 } @terms;
 			my $value	= join(' ', map { +$_ } @ids);
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
+			my $sth	= $self->get_term_id_sth;
 			$sth->execute('triple', $value);
 			($tid) = $sth->fetchrow_array;
 		} else {
@@ -208,9 +276,9 @@ Returns a temporary (in-memory, SQLite) store.
 		}
 		my $dbh			= $self->dbh;
 		my $tid;
-		my $insert_term_sth	= $dbh->prepare('INSERT INTO term (type, value, datatype_id, language) VALUES (?, ?, ?, ?)');
+		my $insert_term_sth	= $self->insert_term_sth;
 		if ($term->does('Attean::API::IRI')) {
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
+			my $sth	= $self->get_term_id_sth;
 			my $value	= $term->value;
 			$sth->execute('iri', $value);
 			($tid) = $sth->fetchrow_array;
@@ -219,7 +287,7 @@ Returns a temporary (in-memory, SQLite) store.
 				$tid	= $self->_last_insert_id('term');
 			}
 		} elsif ($term->does('Attean::API::Blank')) {
-			my $sth	= $dbh->prepare('SELECT term_id FROM term WHERE type = ? AND value = ?');
+			my $sth	= $self->get_term_id_sth;
 			my $value	= $term->value;
 			$sth->execute('blank', $value);
 			($tid) = $sth->fetchrow_array;
@@ -264,6 +332,7 @@ Returns a temporary (in-memory, SQLite) store.
 		
 		if (defined($tid)) {
 			$self->_t2i_cache->set($term->as_string => $tid);
+			$self->_i2t_cache->set($tid => $term);
 			return $tid;
 		}
 		die;
@@ -430,16 +499,10 @@ Adds the specified C<$quad> to the underlying model.
 		
 		my $type	= $self->database_type;
 		my @bind	= @ids;
-		my $sql		= 'INSERT INTO quad (subject, predicate, object, graph) VALUES (?, ?, ?, ?)';
-		if ($type eq 'sqlite') {
-			$sql	= 'INSERT OR IGNORE INTO quad (subject, predicate, object, graph) VALUES (?, ?, ?, ?)';
-		} elsif ($type eq 'mysql') {
-			$sql	= 'INSERT IGNORE INTO quad (subject, predicate, object, graph) VALUES (?, ?, ?, ?)';
-		} elsif ($type eq 'postgresql') {
-			$sql	= 'INSERT INTO quad (subject, predicate, object, graph) SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM quad WHERE subject = ? AND predicate = ? AND object = ? AND graph = ?)';
+		my $sth		= $self->insert_quad_sth;
+		if ($type eq 'postgresql') {
 			push(@bind, @ids);
 		}
-		my $sth		= $self->dbh->prepare($sql);
 		$sth->execute(@bind);
 		return;
 	}
@@ -716,6 +779,7 @@ C<< AtteanX::Store::DBI >> object.
 			$connect_args{sqlite_unicode}	= 1;
 		}
 		
+		$connect_args{PrintError}	= 1;
 		return ($dsn, $user, $password, \%connect_args);
 	}
 
@@ -872,6 +936,7 @@ returns undef.
 					my $node	= $nodes[$i];
 					my $name	= $pos_names[$i];
 					if ($node->does('Attean::API::Variable')) {
+
 						my $var	= $node;
 						push(@vars, [$var, $name]);
 					} elsif ($node->does('Attean::API::TriplePattern') and not $node->is_ground) {
@@ -910,7 +975,7 @@ returns undef.
 				my ($as, $bs)		= map { sprintf('%s.%s', @$_) } ($a, $b);
 				push(@where, join(' ', $as, $op, $bs));
 			}
-			
+
 			return AtteanX::Store::DBI::Plan->new(
 				store => $self,
 				select => \@select,
@@ -1024,7 +1089,6 @@ package AtteanX::Store::DBI::Plan 0.012 {
 	sub sql {
 		my $self	= shift;
 		my $bind	= shift;
-
 		my $store	= $self->store;
 		my $dbh		= $store->dbh;
 		my @bind	= @{ $self->bindings };
