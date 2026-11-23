@@ -34,17 +34,20 @@ package AtteanX::Store::DBI {
 	use Moo;
 	use DBI;
 	use Attean 0.013;
-	use DBI::Const::GetInfoType;
-	use Type::Tiny::Role;
-	use Types::Standard qw(Int Str ArrayRef HashRef ConsumerOf InstanceOf);
-	use Encode;
 	use Cache::LRU;
-	use Set::Scalar;
+	use Data::Dumper;
+	use DBI::Const::GetInfoType;
 	use DBIx::MultiStatementDo;
-	use List::Util qw(any all first mesh);
+	use Encode;
 	use File::ShareDir qw(dist_dir dist_file);
 	use File::Slurp;
+	use List::MoreUtils qw(zip);
+	use List::Util qw(any all first mesh);
+	use List::Util qw(any all first mesh);
 	use Scalar::Util qw(refaddr reftype blessed);
+	use Set::Scalar;
+	use Type::Tiny::Role;
+	use Types::Standard qw(Bool Int Str ArrayRef HashRef ConsumerOf InstanceOf);
 	use namespace::clean;
 
 	our $CURRENT_MODEL_VERSION	= 1;
