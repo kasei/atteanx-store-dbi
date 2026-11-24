@@ -16,13 +16,17 @@ use List::Util qw(all);
 use FindBin qw($Bin);
 use Attean;
 use AtteanX::Store::DBI;
-use Module::Load::Conditional qw(can_load);
 use File::Slurp;
 use File::Temp qw(tempfile);
 use DBIx::MultiStatementDo;
 use Types::Standard qw(Str ArrayRef);
 use Class::Method::Modifiers;
+use Module::Load::Conditional qw(can_load);
 use namespace::clean;
+
+unless (can_load( modules => { 'DBD::sqlite' => 0 })) {
+	plan skip_all => "DBD::sqlite not available.";
+}
 
 with 'Test::Attean::SPARQLSuite';
 
@@ -35,14 +39,7 @@ sub BUILD {
 	my $base		= (defined($env_path) and -d $env_path) ? $env_path : File::Spec->catfile( $Bin, 'data', 'rdf-tests' );
 	my $path		= File::Spec->catfile( $base, 'sparql', 'sparql11' );
 	$self->tests_dir($path);
-
-	if (can_load( modules => { 'RDF::EARL' => 0.002 })) {
-		my $v			= $Attean::VERSION;
-		$v				=~ s/[.]/-/;
-		my $subject		= "http://purl.org/NET/cpan-uri/dist/Attean/v_$v";
-		my $earl		= RDF::EARL->new( subject => $subject );
-		$self->earl($earl);
-	}
+	$self->enable_earl(filename => 'attean-sparql11-dbi-sqlite-planner.ttl', conf => { store => 'DBI/sqlite', 'eval' => 'QueryPlanner' });
 }
 
 my %args	= (use_idp_planner => 1);

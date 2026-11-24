@@ -1,6 +1,6 @@
 use Test::Roo;
 use Test::Exception;
-use List::MoreUtils qw(all);
+use List::Util qw(all);
 use File::Temp qw(tempfile);
 use DBIx::MultiStatementDo;
 use File::Slurp;

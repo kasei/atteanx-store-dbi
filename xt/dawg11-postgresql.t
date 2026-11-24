@@ -16,7 +16,12 @@ use List::Util qw(all);
 use FindBin qw($Bin);
 use Attean;
 use AtteanX::Store::DBI;
+use Module::Load::Conditional qw(can_load);
 use namespace::clean;
+
+unless (can_load( modules => { 'DBD::Pg' => 0 })) {
+	plan skip_all => "DBD::Pg not available.";
+}
 
 with 'Test::Attean::SPARQLSuite';
 
@@ -26,14 +31,7 @@ sub BUILD {
 	my $base		= (defined($env_path) and -d $env_path) ? $env_path : File::Spec->catfile( $Bin, 'data', 'rdf-tests' );
 	my $path		= File::Spec->catfile( $base, 'sparql', 'sparql11' );
 	$self->tests_dir($path);
-
-	if (can_load( modules => { 'RDF::EARL' => 0.002 })) {
-		my $v			= $Attean::VERSION;
-		$v				=~ s/[.]/-/;
-		my $subject		= "http://purl.org/NET/cpan-uri/dist/Attean/v_$v";
-		my $earl		= RDF::EARL->new( subject => $subject );
-		$self->earl($earl);
-	}
+	$self->enable_earl(filename => 'attean-sparql11-dbi-postgresql-planner.ttl', conf => { store => 'DBI/PostgreSQL', 'eval' => 'QueryPlanner' });
 }
 
 my %args	= (use_idp_planner => 1);
@@ -45,7 +43,6 @@ while (defined(my $opt = shift)) {
 		$args{pattern}	= $opt;
 	}
 }
-
 run_me(\%args);
 
 done_testing;
@@ -56,12 +53,17 @@ sub test_model {
 		exit(0);
 	}
 
+	my @args;
+	if (my $port = $ENV{ATTEAN_STORE_PG_PORT}) {
+		push(@args, port => $port);
+	}
 	my @connect		= AtteanX::Store::DBI->dbi_connect_args(
 		'postgresql',
 		database	=> $ENV{ATTEAN_STORE_PG_DATABASE},
 		host		=> $ENV{ATTEAN_STORE_PG_HOST},
 		user		=> $ENV{ATTEAN_STORE_PG_USER},
 		password	=> $ENV{ATTEAN_STORE_PG_PASSWORD},
+		@args
 	);
 	my $dbh			= DBI->connect(@connect);
 	my $store		= Attean->get_store('DBI')->new( dbh => $dbh );
